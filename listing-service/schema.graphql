@@ -1,0 +1,4 @@
+# Listing Service GraphQL Schema
+# Define your Material type, Query and Mutation types here
+# Remember: quantity, price, latitude, longitude, title, description, userId
+

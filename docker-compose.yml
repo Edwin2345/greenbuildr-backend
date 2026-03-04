@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # Auth Service Database
+  auth-db:
+    image: mysql:8.0
+    container_name: auth-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: auth_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./auth-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - auth-db-data:/var/lib/mysql
+    networks:
+      - greenbuildr-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 20s
+      retries: 10
+
+  # Listing Service Database
+  listing-db:
+    image: mysql:8.0
+    container_name: listing-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: listing_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./listing-service/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - listing-db-data:/var/lib/mysql
+    networks:
+      - greenbuildr-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 20s
+      retries: 10
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    ports:
+      - "4001:4001"
+    environment:
+      PORT: 4001
+      DB_HOST: auth-db
+      DB_USER: root
+      DB_PASSWORD: root_password
+      DB_NAME: auth_db
+    depends_on:
+      auth-db:
+        condition: service_healthy
+    networks:
+      - greenbuildr-network
+    restart: unless-stopped
+
+  # Listing Service
+  listing-service:
+    build:
+      context: ./listing-service
+      dockerfile: Dockerfile
+    container_name: listing-service
+    ports:
+      - "4002:4002"
+    environment:
+      PORT: 4002
+      DB_HOST: listing-db
+      DB_USER: root
+      DB_PASSWORD: root_password
+      DB_NAME: listing_db
+    depends_on:
+      listing-db:
+        condition: service_healthy
+    networks:
+      - greenbuildr-network
+    restart: unless-stopped
+
+  # GraphQL Gateway
+  graphql-gateway:
+    build:
+      context: ./graphql-gateway
+      dockerfile: Dockerfile
+    container_name: graphql-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      AUTH_SERVICE_URL: http://auth-service:4001/graphql
+      LISTING_SERVICE_URL: http://listing-service:4002/graphql
+    depends_on:
+      - auth-service
+      - listing-service
+    networks:
+      - greenbuildr-network
+    restart: unless-stopped
+
+volumes:
+  auth-db-data:
+  listing-db-data:
+
+networks:
+  greenbuildr-network:
+    driver: bridge

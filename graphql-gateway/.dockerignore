@@ -1,0 +1,8 @@
+*.go
+go.sum
+.git
+.gitignore
+.env
+.env.*
+*.log
+tmp/

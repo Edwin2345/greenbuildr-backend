@@ -1,5 +1,6 @@
 package ports
 
-// PasswordHasher defines the contract for password hashing operations
 type PasswordHasher interface {
+	Hash(password string) (string, error)
+	Compare(hashedPassword, plainPassword string) error
 }

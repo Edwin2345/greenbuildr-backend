@@ -57,8 +57,6 @@ services:
       LISTING_SERVICE_URL: http://listing-service:4002/graphql
       CLIENT_SECRET: dev-client-secret-change-in-production
       INTERNAL_SECRET: dev-internal-secret-change-in-production
-    depends_on:
-      - auth-service
     networks:
       - greenbuildr-network
     restart: unless-stopped

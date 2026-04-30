@@ -8,6 +8,9 @@ require (
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/google/uuid v1.6.0
+	github.com/greenbuildr/shared v0.0.0
 	github.com/vektah/gqlparser/v2 v2.5.16
-	go.uber.org/zap v1.27.0
+	golang.org/x/crypto v0.24.0
 )
+
+replace github.com/greenbuildr/shared => ../shared

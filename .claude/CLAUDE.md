@@ -59,6 +59,7 @@ In local dev, services reference shared via `replace` in `go.mod`. In production
 - **Payments** — port lives inside listing-service only, it is the only service that needs it
 - **`shared/`** stays thin — contextkeys and middleware only, never domain concepts
 - **Internal JWTs expire in 30 seconds** — short enough to be useless if intercepted on the private network
+- **Database access — sqlx** (`github.com/jmoiron/sqlx`) chosen over GORM/Bob for auth-service (and by convention all services). Domain entities are plain structs with no ORM tags; DB adapter layer uses separate row structs with `db:""` tags and maps to domain entities.
 
 ## Environment Variables
 

@@ -24,7 +24,7 @@ func (s *ResendSender) SendVerificationEmail(ctx context.Context, to, verifyURL 
 		From:    s.from,
 		To:      []string{to},
 		Subject: "Verify your Greenbuildr account",
-		Html:    fmt.Sprintf(`<p>Thanks for signing up for GreenBuildr! <a href="%s">Click here to verify your email</a>. This link expires in 1 hour.</p>`, verifyURL),
+		Html:    fmt.Sprintf(`Thanks for signing up for GreenBuildr!<br><br><a href="%s">Click here to verify your email</a><br><br>This link expires in 1 hour.`, verifyURL),
 	})
 	return err
 }

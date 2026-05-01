@@ -9,7 +9,21 @@ require (
 	golang.org/x/crypto v0.50.0
 )
 
-require github.com/resend/resend-go/v2 v2.28.0
+require (
+	github.com/99designs/gqlgen v0.17.90
+	github.com/go-chi/chi/v5 v5.2.5
+	github.com/resend/resend-go/v2 v2.28.0
+	github.com/vektah/gqlparser/v2 v2.5.33
+)
+
+require (
+	github.com/agnivade/levenshtein v1.2.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
+	github.com/sosodev/duration v1.4.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

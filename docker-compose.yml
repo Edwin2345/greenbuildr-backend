@@ -36,6 +36,9 @@ services:
       DB_NAME: auth_db
       JWT_SECRET: dev-client-secret-change-in-production
       INTERNAL_SECRET: dev-internal-secret-change-in-production
+      RESEND_API_KEY: re_fPhCsWZR_J1pyqpmfk6gAHbef29WBuB57
+      RESEND_FROM: onboarding@resend.dev
+      FRONTEND_URL: http://localhost:3000
     depends_on:
       auth-db:
         condition: service_healthy

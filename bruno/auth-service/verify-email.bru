@@ -1,0 +1,21 @@
+meta {
+  name: Verify Email
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{auth_url}}
+}
+
+body:graphql {
+  mutation VerifyEmail($token: String!) {
+    verifyEmail(token: $token)
+  }
+}
+
+body:graphql:vars {
+  {
+    "token": "paste-token-from-email-here"
+  }
+}

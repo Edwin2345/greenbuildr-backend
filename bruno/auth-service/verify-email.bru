@@ -1,0 +1,27 @@
+meta {
+  name: Verify Email
+  type: graphql
+  seq: 2
+}
+
+post {
+  url: {{auth_url}}
+  body: graphql
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:graphql {
+  mutation VerifyEmail($token: String!) {
+    verifyEmail(token: $token)
+  }
+}
+
+body:graphql:vars {
+  {
+    "token": "0833de0bc5fcff579488a8dd1821382bdac9355a8db5698e775b53ef352dcb80"
+  }
+}

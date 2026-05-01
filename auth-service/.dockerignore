@@ -1,5 +1,3 @@
-*.go
-go.sum
 .git
 .gitignore
 .env

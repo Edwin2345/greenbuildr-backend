@@ -1,21 +1,18 @@
 # Build stage
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /build
 
-# Install build dependencies
 RUN apk add --no-cache git
 
-# Copy go mod files
-COPY go.mod go.sum ./
+# shared must sit at /shared so that the replace ../shared directive resolves correctly
+COPY shared/ /shared/
 
-# Download dependencies
+COPY auth-service/go.mod auth-service/go.sum ./
 RUN go mod download
 
-# Copy source code
-COPY . .
+COPY auth-service/ .
 
-# Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o auth-service .
 
 # Final stage
@@ -23,10 +20,8 @@ FROM alpine:latest
 
 WORKDIR /root/
 
-# Install ca-certificates for HTTPS support
 RUN apk --no-cache add ca-certificates
 
-# Copy binary from builder
 COPY --from=builder /build/auth-service .
 
 EXPOSE 4001

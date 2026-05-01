@@ -1,3 +1,4 @@
-# Auth Service GraphQL Schema
-# Define your User type, AuthPayload, Query and Mutation types here
-
+type Mutation {
+  register(email: String!, password: String!): Boolean!
+  verifyEmail(token: String!): Boolean!
+}

@@ -49,6 +49,8 @@ graphql-gateway/
 |---|---|
 | `shared/middleware` | `InternalAuth()` — internal JWT validation middleware |
 | `shared/contextkeys` | Typed context keys: `UserID`, `Email` |
+| `shared/domainerrors` | `DomainError` struct + methods — services alias this type and define their own error vars |
+| `shared/gqlerrors` | `ToGQLError()` + `CodedError` interface — translates `DomainError` into GraphQL extensions |
 
 In local dev, services reference shared via `replace` in `go.mod`. In production it will be a private Go module.
 
@@ -57,9 +59,32 @@ In local dev, services reference shared via `replace` in `go.mod`. In production
 - **`services/` not `usecases/`** — same discipline (one file per action), preferred naming
 - **Email/messaging** — port defined independently in each service that needs it (auth, listing). Not in `shared/` — services must stay decoupled
 - **Payments** — port lives inside listing-service only, it is the only service that needs it
-- **`shared/`** stays thin — contextkeys and middleware only, never domain concepts
+- **`shared/`** stays infrastructure-only — cross-cutting types (`DomainError`, `CodedError`), middleware, context keys. Never service-specific business logic or entity types.
 - **Internal JWTs expire in 30 seconds** — short enough to be useless if intercepted on the private network
 - **Database access — sqlx** (`github.com/jmoiron/sqlx`) chosen over GORM/Bob for auth-service (and by convention all services). Domain entities are plain structs with no ORM tags; DB adapter layer uses separate row structs with `db:""` tags and maps to domain entities.
+
+## GraphQL Error Shape
+
+Domain errors are translated in `graph/gql_errors.go` via `toGQLError()`. Every resolver must call `toGQLError(err)` before returning an error to the client.
+
+Response shape:
+```json
+{
+  "errors": [{ "message": "Email already registered", "extensions": { "code": "EMAIL_ALREADY_EXISTS" } }]
+}
+```
+
+- `message` — human-readable, from `DomainError.Message`
+- `extensions.code` — machine-readable, from `DomainError.Code`
+- Logs still use `DomainError.Error()` which prints `[CODE] message` — intentional for debugging
+
+## Email Templates
+
+Templates live in `auth-service/adapters/email/templates/` as plain `.html` files and are loaded from disk at runtime by `ResendSender`. In Docker, the directory is volume-mounted so templates can be edited without rebuilding.
+
+| Variable | Default (local `go run`) |
+|---|---|
+| `TEMPLATES_DIR` | `./adapters/email/templates` |
 
 ## Environment Variables
 

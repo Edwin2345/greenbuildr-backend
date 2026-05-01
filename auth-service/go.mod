@@ -12,6 +12,7 @@ require (
 require (
 	github.com/99designs/gqlgen v0.17.90
 	github.com/go-chi/chi/v5 v5.2.5
+	github.com/greenbuildr/shared v0.0.0-00010101000000-000000000000
 	github.com/resend/resend-go/v2 v2.28.0
 	github.com/vektah/gqlparser/v2 v2.5.33
 )

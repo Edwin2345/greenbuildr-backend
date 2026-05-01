@@ -17,7 +17,7 @@ func (r *mutationResolver) Register(ctx context.Context, email string, password 
 	err := r.RegisterService.Register(ctx, services.RegisterInput{Email: email, Password: password})
 	if err != nil {
 		log.Printf("register error: %v", err)
-		return false, err
+		return false, toGQLError(err)
 	}
 	return true, nil
 }
@@ -26,7 +26,7 @@ func (r *mutationResolver) Register(ctx context.Context, email string, password 
 func (r *mutationResolver) VerifyEmail(ctx context.Context, token string) (bool, error) {
 	err := r.RegisterService.VerifyEmail(ctx, token)
 	if err != nil {
-		return false, err
+		return false, toGQLError(err)
 	}
 	return true, nil
 }

@@ -29,6 +29,7 @@ func main() {
 	resendKey := getEnv("RESEND_API_KEY", "")
 	resendFrom := getEnv("RESEND_FROM", "onboarding@resend.dev")
 	frontendURL := getEnv("FRONTEND_URL", "http://localhost:3000")
+	templatesDir := getEnv("TEMPLATES_DIR", "./adapters/email/templates")
 
 	//set up db connection
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?parseTime=true",
@@ -43,7 +44,7 @@ func main() {
 	//set up adapters
 	repo := dbadapter.NewMySQLRepository(db)
 	hasher := cryptoadapter.NewBcryptHasher()
-	emailSender := emailadapter.NewResendSender(resendKey, resendFrom)
+	emailSender := emailadapter.NewResendSender(resendKey, resendFrom, templatesDir)
 
 	//set up services
 	registerSvc := services.NewRegisterService(repo, repo, hasher, emailSender, frontendURL)

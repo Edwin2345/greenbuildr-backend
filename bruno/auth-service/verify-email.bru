@@ -6,6 +6,12 @@ meta {
 
 post {
   url: {{auth_url}}
+  body: graphql
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
 }
 
 body:graphql {
@@ -16,6 +22,6 @@ body:graphql {
 
 body:graphql:vars {
   {
-    "token": "paste-token-from-email-here"
+    "token": "0833de0bc5fcff579488a8dd1821382bdac9355a8db5698e775b53ef352dcb80"
   }
 }

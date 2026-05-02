@@ -9,6 +9,7 @@ import (
 type DomainError = domainerrors.DomainError
 
 var (
+	//ErrUserNotFound is internal use only
 	ErrUserNotFound = &DomainError{
 		Code:       "USER_NOT_FOUND",
 		Message:    "User not found",
@@ -21,10 +22,16 @@ var (
 		StatusCode: http.StatusConflict,
 	}
 
-	ErrInvalidPassword = &DomainError{
-		Code:       "INVALID_PASSWORD",
-		Message:    "Invalid password",
+	ErrInvalidCredentials = &DomainError{
+		Code:       "INVALID_CREDENTIALS",
+		Message:    "Invalid email or password",
 		StatusCode: http.StatusUnauthorized,
+	}
+
+	ErrEmailNotVerified = &DomainError{
+		Code:       "EMAIL_NOT_VERIFIED",
+		Message:    "Please verify your email before logging in",
+		StatusCode: http.StatusForbidden,
 	}
 
 	ErrInvalidEmail = &DomainError{

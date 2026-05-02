@@ -63,6 +63,13 @@ func (m *mockHasher) Compare(hashed, plain string) error {
 	return m.Called(hashed, plain).Error(0)
 }
 
+type mockJWTGenerator struct{ mock.Mock }
+
+func (m *mockJWTGenerator) GenerateJWT(userID, email string) (string, error) {
+	args := m.Called(userID, email)
+	return args.String(0), args.Error(1)
+}
+
 type mockEmailSender struct{ mock.Mock }
 
 func (m *mockEmailSender) SendVerificationEmail(ctx context.Context, to, url string) error {

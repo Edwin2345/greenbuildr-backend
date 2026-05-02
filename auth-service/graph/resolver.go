@@ -8,4 +8,5 @@ import "github.com/greenbuildr/auth-service/domain/services"
 
 type Resolver struct {
 	RegisterService *services.RegisterService
+	LoginService    *services.LoginService
 }

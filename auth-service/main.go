@@ -15,6 +15,7 @@ import (
 	cryptoadapter "github.com/greenbuildr/auth-service/adapters/crypto"
 	dbadapter "github.com/greenbuildr/auth-service/adapters/db"
 	emailadapter "github.com/greenbuildr/auth-service/adapters/email"
+	jwtadapter "github.com/greenbuildr/auth-service/adapters/jwt"
 	"github.com/greenbuildr/auth-service/domain/services"
 	"github.com/greenbuildr/auth-service/graph"
 )
@@ -30,6 +31,7 @@ func main() {
 	resendFrom := getEnv("RESEND_FROM", "onboarding@resend.dev")
 	frontendURL := getEnv("FRONTEND_URL", "http://localhost:3000")
 	templatesDir := getEnv("TEMPLATES_DIR", "./adapters/email/templates")
+	jwtSecret := getEnv("JWT_SECRET", "")
 
 	//set up db connection
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s?parseTime=true",
@@ -45,12 +47,14 @@ func main() {
 	repo := dbadapter.NewMySQLRepository(db)
 	hasher := cryptoadapter.NewBcryptHasher()
 	emailSender := emailadapter.NewResendSender(resendKey, resendFrom, templatesDir)
+	jwtGen := jwtadapter.NewJWTGenerator(jwtSecret)
 
 	//set up services
 	registerSvc := services.NewRegisterService(repo, repo, hasher, emailSender, frontendURL)
+	loginSvc := services.NewLoginService(repo, hasher, jwtGen)
 
 	//Set Up GQL Server + Router
-	resolver := &graph.Resolver{RegisterService: registerSvc}
+	resolver := &graph.Resolver{RegisterService: registerSvc, LoginService: loginSvc}
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
 	router := chi.NewRouter()
 	router.Handle("/", playground.Handler("GraphQL Playground", "/graphql"))

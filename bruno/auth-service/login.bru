@@ -1,7 +1,7 @@
 meta {
-  name: Register
+  name: Login
   type: graphql
-  seq: 1
+  seq: 3
 }
 
 post {
@@ -15,8 +15,8 @@ headers {
 }
 
 body:graphql {
-  mutation Register($email: String!, $password: String!) {
-    register(email: $email, password: $password)
+  mutation Login($email: String!, $password: String!) {
+    login(email: $email, password: $password)
   }
 }
 
@@ -26,4 +26,3 @@ body:graphql:vars {
     "password": "wind*SWIM*tool*2"
   }
 }
-​

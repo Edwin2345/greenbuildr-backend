@@ -31,8 +31,17 @@ func (r *mutationResolver) VerifyEmail(ctx context.Context, token string) (bool,
 	return true, nil
 }
 
+// Login is the resolver for the login field.
+func (r *mutationResolver) Login(ctx context.Context, email string, password string) (string, error) {
+	token, err := r.LoginService.Login(ctx, services.LoginInput{Email: email, Password: password})
+	if err != nil {
+		log.Printf("login error: %v", err)
+		return "", toGQLError(err)
+	}
+	return token, nil
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
 type mutationResolver struct{ *Resolver }
-

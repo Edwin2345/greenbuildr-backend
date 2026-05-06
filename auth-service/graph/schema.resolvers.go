@@ -42,6 +42,30 @@ func (r *mutationResolver) Login(ctx context.Context, email string, password str
 	return token, nil
 }
 
+// RequestPasswordReset is the resolver for the requestPasswordReset field.
+func (r *mutationResolver) RequestPasswordReset(ctx context.Context, email string) (bool, error) {
+	if err := r.ResetPasswordService.RequestPasswordReset(ctx, email); err != nil {
+		return false, toGQLError(err)
+	}
+	return true, nil
+}
+
+// ResetPassword is the resolver for the resetPassword field.
+func (r *mutationResolver) ResetPassword(ctx context.Context, token string, newPassword string) (bool, error) {
+	if err := r.ResetPasswordService.ResetPassword(ctx, token, newPassword); err != nil {
+		return false, toGQLError(err)
+	}
+	return true, nil
+}
+
+// ResendVerificationEmail is the resolver for the resendVerificationEmail field.
+func (r *mutationResolver) ResendVerificationEmail(ctx context.Context, email string) (bool, error) {
+	if err := r.RegisterService.ResendVerificationEmail(ctx, email); err != nil {
+		return false, toGQLError(err)
+	}
+	return true, nil
+}
+
 // Empty is the resolver for the _empty field.
 func (r *queryResolver) Empty(ctx context.Context) (*string, error) {
 	panic(fmt.Errorf("not implemented: Empty - _empty"))

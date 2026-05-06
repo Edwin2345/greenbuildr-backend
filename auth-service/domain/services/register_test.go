@@ -69,7 +69,7 @@ func TestVerifyEmail_ExpiredToken(t *testing.T) {
 
 	assert.Equal(t, domainerrors.ErrInvalidToken, err)
 	userRepo.AssertNotCalled(t, "VerifyUserEmail")
-	tokenRepo.AssertNotCalled(t, "DeleteToken")
+	tokenRepo.AssertNotCalled(t, "DeleteTokensByUserAndType")
 }
 
 func TestVerifyEmail_InvalidToken(t *testing.T) {
@@ -83,7 +83,7 @@ func TestVerifyEmail_InvalidToken(t *testing.T) {
 
 	assert.Equal(t, domainerrors.ErrInvalidToken, err)
 	userRepo.AssertNotCalled(t, "VerifyUserEmail")
-	tokenRepo.AssertNotCalled(t, "DeleteToken")
+	tokenRepo.AssertNotCalled(t, "DeleteTokensByUserAndType")
 }
 
 func TestRegister_Success(t *testing.T) {
@@ -110,6 +110,54 @@ func TestRegister_Success(t *testing.T) {
 	emailSender.AssertCalled(t, "SendVerificationEmail", mock.Anything, "test@example.com", mock.Anything)
 }
 
+func TestResendVerificationEmail_AccountNotFound(t *testing.T) {
+	userRepo := &mockUserRepo{}
+	tokenRepo := &mockTokenRepo{}
+	emailSender := &mockEmailSender{}
+
+	userRepo.On("GetUserByEmail", mock.Anything, "ghost@example.com").Return(nil, domainerrors.ErrUserNotFound)
+
+	svc := newTestRegisterService(userRepo, tokenRepo, &mockHasher{}, emailSender)
+	err := svc.ResendVerificationEmail(context.Background(), "ghost@example.com")
+
+	assert.NoError(t, err)
+	emailSender.AssertNotCalled(t, "SendVerificationEmail")
+}
+
+func TestResendVerificationEmail_AlreadyVerified(t *testing.T) {
+	userRepo := &mockUserRepo{}
+
+	verifiedAt := time.Now().Add(-24 * time.Hour)
+	verifiedUser := &entities.User{ID: "user-123", Email: "user@example.com", EmailVerifiedAt: &verifiedAt}
+	userRepo.On("GetUserByEmail", mock.Anything, "user@example.com").Return(verifiedUser, nil)
+
+	emailSender := &mockEmailSender{}
+	svc := newTestRegisterService(userRepo, &mockTokenRepo{}, &mockHasher{}, emailSender)
+	err := svc.ResendVerificationEmail(context.Background(), "user@example.com")
+
+	assert.NoError(t, err)
+	emailSender.AssertNotCalled(t, "SendVerificationEmail")
+}
+
+func TestResendVerificationEmail_Success(t *testing.T) {
+	userRepo := &mockUserRepo{}
+	tokenRepo := &mockTokenRepo{}
+	emailSender := &mockEmailSender{}
+
+	unverifiedUser := &entities.User{ID: "user-123", Email: "user@example.com", EmailVerifiedAt: nil}
+	userRepo.On("GetUserByEmail", mock.Anything, "user@example.com").Return(unverifiedUser, nil)
+	tokenRepo.On("DeleteTokensByUserAndType", mock.Anything, "user-123", entities.EmailVerification).Return(nil)
+	tokenRepo.On("CreateToken", mock.Anything, mock.Anything).Return(nil)
+	emailSender.On("SendVerificationEmail", mock.Anything, "user@example.com", mock.Anything).Return(nil)
+
+	svc := newTestRegisterService(userRepo, tokenRepo, &mockHasher{}, emailSender)
+	err := svc.ResendVerificationEmail(context.Background(), "user@example.com")
+
+	assert.NoError(t, err)
+	tokenRepo.AssertCalled(t, "DeleteTokensByUserAndType", mock.Anything, "user-123", entities.EmailVerification)
+	emailSender.AssertCalled(t, "SendVerificationEmail", mock.Anything, "user@example.com", mock.Anything)
+}
+
 func TestVerifyEmail_Success(t *testing.T) {
 	tokenRepo := &mockTokenRepo{}
 	userRepo := &mockUserRepo{}
@@ -123,7 +171,7 @@ func TestVerifyEmail_Success(t *testing.T) {
 	}
 	tokenRepo.On("GetTokenByHash", mock.Anything, "rawtoken").Return(validToken, nil)
 	userRepo.On("VerifyUserEmail", mock.Anything, "user-123").Return(nil)
-	tokenRepo.On("DeleteToken", mock.Anything, "rawtoken").Return(nil)
+	tokenRepo.On("DeleteTokensByUserAndType", mock.Anything, "user-123", entities.EmailVerification).Return(nil)
 
 	svc := newTestRegisterService(userRepo, tokenRepo, &mockHasher{}, &mockEmailSender{})
 
@@ -131,5 +179,5 @@ func TestVerifyEmail_Success(t *testing.T) {
 
 	assert.NoError(t, err)
 	userRepo.AssertCalled(t, "VerifyUserEmail", mock.Anything, "user-123")
-	tokenRepo.AssertCalled(t, "DeleteToken", mock.Anything, "rawtoken")
+	tokenRepo.AssertCalled(t, "DeleteTokensByUserAndType", mock.Anything, "user-123", entities.EmailVerification)
 }

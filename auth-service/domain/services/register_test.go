@@ -69,7 +69,7 @@ func TestVerifyEmail_ExpiredToken(t *testing.T) {
 
 	assert.Equal(t, domainerrors.ErrInvalidToken, err)
 	userRepo.AssertNotCalled(t, "VerifyUserEmail")
-	tokenRepo.AssertNotCalled(t, "DeleteToken")
+	tokenRepo.AssertNotCalled(t, "DeleteTokensByUserAndType")
 }
 
 func TestVerifyEmail_InvalidToken(t *testing.T) {
@@ -83,7 +83,7 @@ func TestVerifyEmail_InvalidToken(t *testing.T) {
 
 	assert.Equal(t, domainerrors.ErrInvalidToken, err)
 	userRepo.AssertNotCalled(t, "VerifyUserEmail")
-	tokenRepo.AssertNotCalled(t, "DeleteToken")
+	tokenRepo.AssertNotCalled(t, "DeleteTokensByUserAndType")
 }
 
 func TestRegister_Success(t *testing.T) {
@@ -123,7 +123,7 @@ func TestVerifyEmail_Success(t *testing.T) {
 	}
 	tokenRepo.On("GetTokenByHash", mock.Anything, "rawtoken").Return(validToken, nil)
 	userRepo.On("VerifyUserEmail", mock.Anything, "user-123").Return(nil)
-	tokenRepo.On("DeleteToken", mock.Anything, "rawtoken").Return(nil)
+	tokenRepo.On("DeleteTokensByUserAndType", mock.Anything, "user-123", entities.EmailVerification).Return(nil)
 
 	svc := newTestRegisterService(userRepo, tokenRepo, &mockHasher{}, &mockEmailSender{})
 
@@ -131,5 +131,5 @@ func TestVerifyEmail_Success(t *testing.T) {
 
 	assert.NoError(t, err)
 	userRepo.AssertCalled(t, "VerifyUserEmail", mock.Anything, "user-123")
-	tokenRepo.AssertCalled(t, "DeleteToken", mock.Anything, "rawtoken")
+	tokenRepo.AssertCalled(t, "DeleteTokensByUserAndType", mock.Anything, "user-123", entities.EmailVerification)
 }

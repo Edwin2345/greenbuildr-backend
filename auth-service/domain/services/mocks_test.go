@@ -46,9 +46,6 @@ func (m *mockTokenRepo) GetTokenByHash(ctx context.Context, rawToken string) (*e
 	}
 	return args.Get(0).(*entities.Token), args.Error(1)
 }
-func (m *mockTokenRepo) DeleteToken(ctx context.Context, rawToken string) error {
-	return m.Called(ctx, rawToken).Error(0)
-}
 func (m *mockTokenRepo) DeleteTokensByUserAndType(ctx context.Context, userID string, tokenType entities.TokenType) error {
 	return m.Called(ctx, userID, tokenType).Error(0)
 }

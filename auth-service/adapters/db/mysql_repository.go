@@ -168,17 +168,6 @@ func (r *MySQLRepository) GetTokenByHash(ctx context.Context, rawToken string) (
 	return row.toDomain(), nil
 }
 
-func (r *MySQLRepository) DeleteToken(ctx context.Context, rawToken string) error {
-	_, err := r.db.ExecContext(ctx,
-		`DELETE FROM auth_tokens WHERE token_hash = ?`,
-		hashToken(rawToken),
-	)
-	if err != nil {
-		return domainerrors.ErrInternalError
-	}
-	return nil
-}
-
 func (r *MySQLRepository) DeleteTokensByUserAndType(ctx context.Context, userID string, tokenType entities.TokenType) error {
 	_, err := r.db.ExecContext(ctx,
 		`DELETE FROM auth_tokens WHERE user_id = ? AND token_type = ?`,

@@ -158,8 +158,8 @@ func (s *RegisterService) VerifyEmail(ctx context.Context, rawToken string) erro
 
 	log.Printf("verifyEmail: email verified userID=%s", token.UserID)
 
-	if err := s.tokenRepo.DeleteToken(ctx, rawToken); err != nil {
-		log.Printf("verifyEmail: failed to delete token userID=%s: %v", token.UserID, err)
+	if err := s.tokenRepo.DeleteTokensByUserAndType(ctx, token.UserID, entities.EmailVerification); err != nil {
+		log.Printf("verifyEmail: failed to delete tokens userID=%s: %v", token.UserID, err)
 		return err
 	}
 

@@ -20,14 +20,12 @@ services:
       timeout: 20s
       retries: 10
 
-  # Auth Service
+  # Auth Service (internal only — not exposed to host)
   auth-service:
     build:
       context: .
       dockerfile: auth-service/Dockerfile
     container_name: auth-service
-    ports:
-      - "4001:4001"
     environment:
       PORT: 4001
       DB_HOST: auth-db
@@ -35,7 +33,6 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: auth_db
       JWT_SECRET: ${JWT_SECRET}
-      INTERNAL_SECRET: ${INTERNAL_SECRET}
       RESEND_API_KEY: ${RESEND_API_KEY}
       RESEND_FROM: onboarding@resend.dev
       FRONTEND_URL: http://localhost:3000
@@ -49,20 +46,40 @@ services:
       - greenbuildr-network
     restart: unless-stopped
 
-  # GraphQL Gateway
-  graphql-gateway:
+  # Apollo Router (internal only — not exposed to host)
+  apollo-router:
+    image: ghcr.io/apollographql/router:v1.58.0
+    container_name: apollo-router
+    volumes:
+      - ./router.yaml:/dist/config/router.yaml:ro
+      - ./supergraph.graphql:/dist/schema/supergraph.graphql:ro
+    command: >
+      --config /dist/config/router.yaml
+      --supergraph /dist/schema/supergraph.graphql
+      --dev
+      --listen 0.0.0.0:4100
+    environment:
+      APOLLO_ROUTER_ELV2_LICENSE: accept
+    depends_on:
+      - auth-service
+    networks:
+      - greenbuildr-network
+    restart: unless-stopped
+
+  # Apollo Auth Proxy (client-facing — only externally exposed service)
+  apollo-auth:
     build:
-      context: ./graphql-gateway
-      dockerfile: Dockerfile
-    container_name: graphql-gateway
+      context: .
+      dockerfile: apollo-auth/Dockerfile
+    container_name: apollo-auth
     ports:
       - "4000:4000"
     environment:
       PORT: 4000
-      AUTH_SERVICE_URL: http://auth-service:4001/graphql
-      LISTING_SERVICE_URL: http://listing-service:4002/graphql
       CLIENT_SECRET: ${CLIENT_SECRET}
-      INTERNAL_SECRET: ${INTERNAL_SECRET}
+      APOLLO_ROUTER_URL: http://apollo-router:4100
+    depends_on:
+      - apollo-router
     networks:
       - greenbuildr-network
     restart: unless-stopped

@@ -1,0 +1,14 @@
+supergraph:
+  path: /graphql
+
+headers:
+  all:
+    request:
+      - propagate:
+          named: x-user-id
+      - propagate:
+          named: x-user-email
+
+cors:
+  origins:
+    - http://localhost:3000

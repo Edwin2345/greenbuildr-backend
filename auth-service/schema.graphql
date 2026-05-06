@@ -1,3 +1,10 @@
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"])
+
+# query stub required by federation
+type Query {
+  _empty: String
+}
+
 type Mutation {
   register(email: String!, password: String!): Boolean!
   verifyEmail(token: String!): Boolean!

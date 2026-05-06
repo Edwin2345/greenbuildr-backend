@@ -52,9 +52,10 @@ func main() {
 	//set up services
 	registerSvc := services.NewRegisterService(repo, repo, hasher, emailSender, frontendURL)
 	loginSvc := services.NewLoginService(repo, hasher, jwtGen)
+	resetPasswordSvc := services.NewResetPasswordService(repo, repo, hasher, emailSender, frontendURL)
 
 	//Set Up GQL Server + Router
-	resolver := &graph.Resolver{RegisterService: registerSvc, LoginService: loginSvc}
+	resolver := &graph.Resolver{RegisterService: registerSvc, LoginService: loginSvc, ResetPasswordService: resetPasswordSvc}
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
 	router := chi.NewRouter()
 	router.Handle("/", playground.Handler("GraphQL Playground", "/graphql"))

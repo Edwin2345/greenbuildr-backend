@@ -41,16 +41,20 @@ func NewResetPasswordService(
 // Initial Password Reset Request
 // ---------------------------------------------------------------------------------------
 func (s *ResetPasswordService) RequestPasswordReset(ctx context.Context, email string) error {
-	log.Printf("reset password: request password reset for email=%s", email)
+	log.Printf("reset password request: password reset for email=%s", email)
 
 	foundUser, err := s.userRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		//don't show to client that account doesnt exist -> fail silently
 		if err == domainerrors.ErrUserNotFound {
+			log.Printf("reset password: failed to find account using email=%s: %v", email, err)
 			return nil
 		}
-		log.Printf("reset password: failed to find account using email=%s: %v", email, err)
 		return err
+	}
+
+	if !foundUser.IsEmailVerified() {
+		return domainerrors.ErrEmailNotVerified
 	}
 
 	resetPasswordToken, err := s.createResetPasswordToken(ctx, foundUser.ID)
@@ -105,10 +109,11 @@ func (s *ResetPasswordService) sendResetPasswordEmail(ctx context.Context, email
 func (s *ResetPasswordService) ResetPassword(ctx context.Context, resetPasswordToken string, newPassword string) error {
 	//validate password requirement
 	if len(newPassword) < 8 {
+		log.Printf("reset password: rejected as new password too short")
 		return domainerrors.ErrPasswordTooShort
 	}
 
-	log.Printf("reset password: verifying token")
+	log.Printf("reset password: starting for reset token %s", resetPasswordToken)
 	token, err := s.tokenRepo.GetTokenByHash(ctx, resetPasswordToken)
 	if err != nil {
 		log.Printf("reset password: token lookup failed: %v", err)
@@ -117,6 +122,16 @@ func (s *ResetPasswordService) ResetPassword(ctx context.Context, resetPasswordT
 	if token.IsExpired() {
 		log.Printf("reset password: token expired for userID=%s", token.UserID)
 		return domainerrors.ErrInvalidToken
+	}
+
+	user, err := s.userRepo.GetUserById(ctx, token.UserID)
+	if err != nil {
+		log.Printf("reset password: failed to load user userID=%s: %v", token.UserID, err)
+		return domainerrors.ErrInternalError
+	}
+	if !user.IsEmailVerified() {
+		log.Printf("reset password: account not verified userID=%s", token.UserID)
+		return domainerrors.ErrEmailNotVerified
 	}
 
 	passwordHash, err := s.hasher.Hash(newPassword)
@@ -130,5 +145,6 @@ func (s *ResetPasswordService) ResetPassword(ctx context.Context, resetPasswordT
 		return err
 	}
 
+	log.Printf("reset password: succeeded for user %s", token.UserID)
 	return s.tokenRepo.DeleteTokensByUserAndType(ctx, token.UserID, entities.PasswordReset)
 }

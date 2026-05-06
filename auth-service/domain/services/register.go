@@ -65,6 +65,7 @@ func (s *RegisterService) Register(ctx context.Context, input RegisterInput) err
 
 func (s *RegisterService) createUser(ctx context.Context, input RegisterInput) (*entities.User, error) {
 	if len(input.Password) < 8 {
+		log.Printf("register: rejected as password too short for email: %v", input.Email)
 		return nil, domainerrors.ErrPasswordTooShort
 	}
 
@@ -133,6 +134,35 @@ func (s *RegisterService) sendVerificationEmail(ctx context.Context, email, rawT
 
 	log.Printf("register: verification email sent to=%s", email)
 	return nil
+}
+
+func (s *RegisterService) ResendVerificationEmail(ctx context.Context, email string) error {
+	log.Printf("register: resending verification email to=%s", email)
+
+	user, err := s.userRepo.GetUserByEmail(ctx, email)
+	if err != nil {
+		if err == domainerrors.ErrUserNotFound {
+			return nil
+		}
+		log.Printf("resendVerification: failed to find account email=%s: %v", email, err)
+		return domainerrors.ErrInternalError
+	}
+
+	if user.IsEmailVerified() {
+		return nil
+	}
+
+	//Delete old emnail vrificaiton tokens and create new one
+	if err := s.tokenRepo.DeleteTokensByUserAndType(ctx, user.ID, entities.EmailVerification); err != nil {
+		log.Printf("resendVerification: failed to delete old tokens userID=%s: %v", user.ID, err)
+		return domainerrors.ErrInternalError
+	}
+	rawToken, err := s.createVerificationToken(ctx, user.ID)
+	if err != nil {
+		return err
+	}
+
+	return s.sendVerificationEmail(ctx, user.Email, rawToken)
 }
 
 // Email Verification

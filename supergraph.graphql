@@ -42,6 +42,9 @@ type Mutation
   register(email: String!, password: String!): Boolean!
   verifyEmail(token: String!): Boolean!
   login(email: String!, password: String!): String!
+  requestPasswordReset(email: String!): Boolean!
+  resetPassword(token: String!, newPassword: String!): Boolean!
+  resendVerificationEmail(email: String!): Boolean!
 }
 
 type Query

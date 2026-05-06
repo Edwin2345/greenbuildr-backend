@@ -7,6 +7,7 @@ import "github.com/greenbuildr/auth-service/domain/services"
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	RegisterService *services.RegisterService
-	LoginService    *services.LoginService
+	RegisterService      *services.RegisterService
+	LoginService         *services.LoginService
+	ResetPasswordService *services.ResetPasswordService
 }

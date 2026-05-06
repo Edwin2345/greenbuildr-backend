@@ -4,77 +4,44 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/greenbuildr/shared/contextkeys"
 	"github.com/greenbuildr/shared/middleware"
 )
 
-const testSecret = "test-secret"
-
-func makeToken(secret string, userID, email string, expiry time.Time) string {
-	claims := jwt.MapClaims{
-		"sub":   userID,
-		"email": email,
-		"exp":   expiry.Unix(),
-	}
-	token, _ := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(secret))
-	return token
-}
-
-// okHandler is a next handler that always returns 200, used in failure cases
-// where we only care about the middleware rejecting the request.
 func okHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 }
 
-func TestInternalAuth_MissingToken(t *testing.T) {
+func TestInjectUserContext_MissingHeaders(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
 
-	middleware.DecodeInternalAuthToken(testSecret)(okHandler()).ServeHTTP(rec, req)
+	middleware.InjectUserContext(okHandler()).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("expected 401, got %d", rec.Code)
 	}
 }
 
-func TestInternalAuth_WrongSecret(t *testing.T) {
-	token := makeToken("wrong-secret", "user-1", "user@example.com", time.Now().Add(time.Minute))
-
+func TestInjectUserContext_MissingEmail(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Header.Set("X-Internal-Token", token)
+	req.Header.Set("X-User-ID", "user-1")
 	rec := httptest.NewRecorder()
 
-	middleware.DecodeInternalAuthToken(testSecret)(okHandler()).ServeHTTP(rec, req)
+	middleware.InjectUserContext(okHandler()).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusUnauthorized {
 		t.Errorf("expected 401, got %d", rec.Code)
 	}
 }
 
-func TestInternalAuth_ExpiredToken(t *testing.T) {
-	token := makeToken(testSecret, "user-1", "user@example.com", time.Now().Add(-time.Minute))
-
+func TestInjectUserContext_Valid(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Header.Set("X-Internal-Token", token)
-	rec := httptest.NewRecorder()
-
-	middleware.DecodeInternalAuthToken(testSecret)(okHandler()).ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusUnauthorized {
-		t.Errorf("expected 401, got %d", rec.Code)
-	}
-}
-
-func TestInternalAuth_ValidToken(t *testing.T) {
-	token := makeToken(testSecret, "user-1", "user@example.com", time.Now().Add(time.Minute))
-
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Header.Set("X-Internal-Token", token)
+	req.Header.Set("X-User-ID", "user-1")
+	req.Header.Set("X-User-Email", "user@example.com")
 	rec := httptest.NewRecorder()
 
 	var capturedUserID, capturedEmail string
@@ -84,7 +51,7 @@ func TestInternalAuth_ValidToken(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	middleware.DecodeInternalAuthToken(testSecret)(next).ServeHTTP(rec, req)
+	middleware.InjectUserContext(next).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("expected 200, got %d", rec.Code)

@@ -1,0 +1,6 @@
+federation_version: =2.0.0
+subgraphs:
+  auth:
+    routing_url: http://auth-service:4001/graphql
+    schema:
+      file: ./auth-service/schema.graphql

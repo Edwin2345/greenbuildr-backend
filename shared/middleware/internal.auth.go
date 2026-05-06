@@ -3,42 +3,25 @@ package middleware
 import (
 	"context"
 	"net/http"
-	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/greenbuildr/shared/contextkeys"
 )
 
-type internalClaims struct {
-	Email string `json:"email"`
-	jwt.RegisteredClaims
-}
+// InjectUserContext reads X-User-ID and X-User-Email headers injected by the
+// apollo auth proxy and populates them into the request context. Returns 401 if either
+// header is missing (unauthenticated request).
+func InjectUserContext(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Header.Get("X-User-ID")
+		email := r.Header.Get("X-User-Email")
 
-// validates the internal JWT injected by the gateway and populates userID and email into the request context.
-func DecodeInternalAuthToken(secret string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			tokenStr := strings.TrimPrefix(r.Header.Get("X-Internal-Token"), "Bearer ")
-			if tokenStr == "" {
-				http.Error(w, "missing internal token", http.StatusUnauthorized)
-				return
-			}
+		if userID == "" || email == "" {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
 
-			claims := &internalClaims{}
-			token, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (any, error) {
-				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-					return nil, jwt.ErrSignatureInvalid
-				}
-				return []byte(secret), nil
-			})
-			if err != nil || !token.Valid {
-				http.Error(w, "invalid internal token", http.StatusUnauthorized)
-				return
-			}
-
-			ctx := context.WithValue(r.Context(), contextkeys.UserID, claims.Subject)
-			ctx = context.WithValue(ctx, contextkeys.Email, claims.Email)
-			next.ServeHTTP(w, r.WithContext(ctx))
-		})
-	}
+		ctx := context.WithValue(r.Context(), contextkeys.UserID, userID)
+		ctx = context.WithValue(ctx, contextkeys.Email, email)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }
